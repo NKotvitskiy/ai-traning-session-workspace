@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "SiGZYEGZxrs=",
+  "success": true,
+  "projectFilePath": "/home/nikita/source/repos/ai-traning-session-workspace/apps/backend/src/SampleApi/SampleApi.csproj",
+  "expectedPackageFiles": [
+    "/home/nikita/.nuget/packages/microsoft.netcore.app.ref/8.0.24/microsoft.netcore.app.ref.8.0.24.nupkg.sha512",
+    "/home/nikita/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.24/microsoft.aspnetcore.app.ref.8.0.24.nupkg.sha512",
+    "/home/nikita/.nuget/packages/microsoft.netcore.app.host.linux-x64/8.0.24/microsoft.netcore.app.host.linux-x64.8.0.24.nupkg.sha512"
+  ],
+  "logs": []
+}
