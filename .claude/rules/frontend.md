@@ -1,6 +1,6 @@
 ---
 paths:
-  - "apps/frontend/**/*.{ts,tsx}"
+  - "apps/frontend/**"
 ---
 
 @../../.github/instructions/frontend.instructions.md

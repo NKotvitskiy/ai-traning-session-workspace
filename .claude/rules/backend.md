@@ -1,6 +1,6 @@
 ---
 paths:
-  - "apps/backend/**/*.cs"
+  - "apps/backend/**"
 ---
 
 @../../.github/instructions/backend.instructions.md

@@ -6,17 +6,17 @@ The goal is to keep the **instruction bodies in `.github/`** and let **Claude** 
 
 ## What is being tested
 
-The instructions are intentionally non-functional. They only ask the agent to prepend smileys so loading behavior is easy to verify.
+The instructions are intentionally non-functional. They only ask the agent to prepend emojis so loading behavior is easy to verify.
 
-- General instruction: `:)`
-- Frontend conditional instruction: `:D`
-- Backend conditional instruction: `;)`
+- General instruction: 👋
+- Frontend conditional instruction: 🎨
+- Backend conditional instruction: ⚙️
 
 Expected behavior:
 
-- General context only -> response starts with `:)`
-- Frontend file context -> response starts with `:) :D`
-- Backend file context -> response starts with `:) ;)`
+- General context only -> response starts with 👋
+- Frontend file context -> response starts with 👋 🎨
+- Backend file context -> response starts with 👋 ⚙️
 
 ## Repository structure
 

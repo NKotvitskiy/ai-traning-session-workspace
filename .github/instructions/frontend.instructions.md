@@ -2,6 +2,7 @@
 applyTo: "apps/frontend/**"
 ---
 
-# Frontend test marker
+# Frontend guidelines
 
-- If these instructions are active, begin your response with `:D` immediately after any general smiley.
+- After the general greeting emoji, add the 🎨 emoji.
+- Follow with one sentence noting that you are working in the frontend layer.

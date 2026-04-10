@@ -2,6 +2,8 @@
 applyTo: "apps/backend/**"
 ---
 
-# Backend test marker
+# Backend guidelines
 
-- If these instructions are active, begin your response with `;)` immediately after any general smiley.
+- After the general greeting emoji, add the ⚙️ emoji.
+- Follow with one sentence noting that you are working in the backend layer.
+- Do exactly what the user asks for and nothing more.
