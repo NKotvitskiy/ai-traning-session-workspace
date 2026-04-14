@@ -1,0 +1,1152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tool-Agnostic AI Definitions: Rules, Agents & Skills</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --surface: #1a1d27;
+        --surface2: #242736;
+        --accent: #6c63ff;
+        --accent2: #00d4aa;
+        --accent3: #ff6b6b;
+        --accent4: #ffd166;
+        --text: #e8eaf6;
+        --muted: #8b90b0;
+        --border: #2e3250;
+        --radius: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Progress bar ── */
+      #progress-bar {
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        transition: width 0.4s ease;
+        flex-shrink: 0;
+      }
+
+      /* ── Slide container ── */
+      #slides {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .slide {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 48px 64px;
+        opacity: 0;
+        transform: translateX(60px);
+        transition:
+          opacity 0.45s ease,
+          transform 0.45s ease;
+        pointer-events: none;
+      }
+
+      .slide.active {
+        opacity: 1;
+        transform: translateX(0);
+        pointer-events: all;
+      }
+
+      .slide.prev {
+        opacity: 0;
+        transform: translateX(-60px);
+      }
+
+      /* ── Nav ── */
+      #nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        padding: 16px 32px;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+
+      .nav-btn {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 8px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        transition:
+          background 0.2s,
+          border-color 0.2s;
+      }
+
+      .nav-btn:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .nav-btn:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+
+      #slide-counter {
+        color: var(--muted);
+        font-size: 14px;
+        min-width: 80px;
+        text-align: center;
+      }
+
+      /* ── Slide-specific layout helpers ── */
+      .slide-title {
+        font-size: clamp(28px, 4vw, 48px);
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 12px;
+        line-height: 1.2;
+      }
+
+      .slide-subtitle {
+        font-size: clamp(14px, 1.8vw, 20px);
+        color: var(--muted);
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+
+      /* Cards grid */
+      .cards {
+        display: flex;
+        gap: 20px;
+        width: 100%;
+        max-width: 1100px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 28px 24px;
+        flex: 1;
+        min-width: 220px;
+        max-width: 320px;
+      }
+
+      .card-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+      }
+      .card-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .card-body {
+        font-size: 14px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      /* Two-column DO / DON'T */
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        width: 100%;
+        max-width: 1000px;
+      }
+
+      .do-box,
+      .dont-box {
+        border-radius: var(--radius);
+        padding: 24px;
+      }
+
+      .do-box {
+        background: rgba(0, 212, 170, 0.08);
+        border: 1px solid rgba(0, 212, 170, 0.3);
+      }
+      .dont-box {
+        background: rgba(255, 107, 107, 0.08);
+        border: 1px solid rgba(255, 107, 107, 0.3);
+      }
+
+      .box-title {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .do-box .box-title {
+        color: var(--accent2);
+      }
+      .dont-box .box-title {
+        color: var(--accent3);
+      }
+
+      ul.check-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      ul.check-list li {
+        font-size: 13px;
+        color: var(--muted);
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        line-height: 1.5;
+      }
+      ul.check-list li::before {
+        content: attr(data-icon);
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
+      /* Hierarchy diagram */
+      .hierarchy {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        width: 100%;
+        max-width: 700px;
+      }
+
+      .h-level {
+        width: 100%;
+        border-radius: var(--radius);
+        padding: 18px 28px;
+        text-align: center;
+        position: relative;
+      }
+
+      .h-level:not(:last-child)::after {
+        content: "↓";
+        display: block;
+        text-align: center;
+        color: var(--muted);
+        font-size: 20px;
+        margin: 6px 0;
+      }
+
+      .h-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+      .h-name {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .h-desc {
+        font-size: 13px;
+        margin-top: 4px;
+        opacity: 0.75;
+      }
+
+      /* Badge */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      /* Table */
+      .comp-table {
+        width: 100%;
+        max-width: 900px;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .comp-table th {
+        background: var(--surface2);
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .comp-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+        line-height: 1.5;
+      }
+
+      .comp-table tr:last-child td {
+        border-bottom: none;
+      }
+      .comp-table tr:hover td {
+        background: var(--surface);
+      }
+
+      /* Code block */
+      pre {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 20px 24px;
+        font-family: "Cascadia Code", "Fira Code", monospace;
+        font-size: 13px;
+        line-height: 1.7;
+        color: #c9d1d9;
+        width: 100%;
+        max-width: 860px;
+        overflow-x: auto;
+        text-align: left;
+      }
+
+      .kw {
+        color: #ff79c6;
+      }
+      .cm {
+        color: #6272a4;
+        font-style: italic;
+      }
+      .str {
+        color: #f1fa8c;
+      }
+      .prop {
+        color: #8be9fd;
+      }
+      .val {
+        color: #bd93f9;
+      }
+
+      /* ── Slide-specific accent colors ── */
+      .accent-purple {
+        color: var(--accent);
+      }
+      .accent-teal {
+        color: var(--accent2);
+      }
+      .accent-red {
+        color: var(--accent3);
+      }
+      .accent-yellow {
+        color: var(--accent4);
+      }
+
+      .bg-purple {
+        background: rgba(108, 99, 255, 0.15);
+        border-color: rgba(108, 99, 255, 0.4);
+      }
+      .bg-teal {
+        background: rgba(0, 212, 170, 0.12);
+        border-color: rgba(0, 212, 170, 0.35);
+      }
+      .bg-red {
+        background: rgba(255, 107, 107, 0.12);
+        border-color: rgba(255, 107, 107, 0.35);
+      }
+      .bg-yellow {
+        background: rgba(255, 209, 102, 0.12);
+        border-color: rgba(255, 209, 102, 0.35);
+      }
+
+      /* ── Tip box ── */
+      .tip {
+        background: rgba(108, 99, 255, 0.1);
+        border-left: 3px solid var(--accent);
+        border-radius: 0 8px 8px 0;
+        padding: 14px 20px;
+        font-size: 14px;
+        color: var(--muted);
+        width: 100%;
+        max-width: 860px;
+        line-height: 1.6;
+      }
+
+      .tip strong {
+        color: var(--text);
+      }
+
+      /* ── Wide card ── */
+      .wide-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px 28px;
+        width: 100%;
+        max-width: 900px;
+      }
+
+      .wide-card + .wide-card {
+        margin-top: 16px;
+      }
+
+      .wc-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .wc-icon {
+        font-size: 24px;
+      }
+      .wc-title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .wc-body {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      /* ── Intro slide ── */
+      .intro-logo {
+        font-size: 72px;
+        margin-bottom: 24px;
+        filter: drop-shadow(0 0 40px rgba(108, 99, 255, 0.5));
+      }
+
+      /* Numbered list */
+      ol.steps {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        max-width: 700px;
+      }
+      ol.steps li {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 18px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      ol.steps li .num {
+        background: var(--accent);
+        color: white;
+        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="progress-bar" style="width: 0%"></div>
+
+    <div id="slides">
+      <!-- ══════════════════════════════ 1. TITLE ══════════════════════════════ -->
+      <section class="slide active">
+        <div class="intro-logo">🤖</div>
+        <div class="slide-title">Tool-Agnostic AI Definitions</div>
+        <div class="slide-subtitle">
+          How to write <strong style="color: var(--accent)">Rules</strong>,
+          <strong style="color: var(--accent2)">Agents</strong> &amp;
+          <strong style="color: var(--accent4)">Skills</strong>
+          that work everywhere
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 8px">
+          <span
+            class="badge"
+            style="background: rgba(108, 99, 255, 0.2); color: var(--accent)"
+            >📜 Rules</span
+          >
+          <span
+            class="badge"
+            style="background: rgba(0, 212, 170, 0.2); color: var(--accent2)"
+            >🤖 Agents</span
+          >
+          <span
+            class="badge"
+            style="background: rgba(255, 209, 102, 0.2); color: var(--accent4)"
+            >⚡ Skills</span
+          >
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 2. WHY TOOL-AGNOSTIC ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(108, 99, 255, 0.2); color: var(--accent)"
+        >
+          Context
+        </div>
+        <div class="slide-title">Why Tool-Agnostic?</div>
+        <div class="slide-subtitle">
+          Instructions travel across AI tools — write them once, apply
+          everywhere.
+        </div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-icon">🔄</div>
+            <div class="card-title">Portability</div>
+            <div class="card-body">
+              Currently supported in <strong>Claude Code</strong> and
+              <strong>GitHub Copilot</strong>. The concepts are designed to
+              extend to future tools as the ecosystem matures.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">🧩</div>
+            <div class="card-title">Composability</div>
+            <div class="card-body">
+              Rules, agents, and skills compose together. A skill may invoke
+              agents; agents follow rules.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">📐</div>
+            <div class="card-title">Consistency</div>
+            <div class="card-body">
+              Teams get predictable AI behavior across every developer's local
+              setup and CI pipeline.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 3. THE THREE PRIMITIVES ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(108, 99, 255, 0.15); color: var(--accent)"
+        >
+          Overview
+        </div>
+        <div class="slide-title">The Three Primitives</div>
+        <div class="slide-subtitle">A quick reference before we dive in.</div>
+        <div class="cards">
+          <div class="card" style="border-color: rgba(108, 99, 255, 0.4)">
+            <div class="card-icon">📜</div>
+            <div class="card-title accent-purple">Rules / Instructions</div>
+            <div class="card-body">
+              Persistent behavioral guidelines. They are always active and shape
+              how AI responds in every context.
+            </div>
+          </div>
+          <div class="card" style="border-color: rgba(0, 212, 170, 0.4)">
+            <div class="card-icon">🤖</div>
+            <div class="card-title accent-teal">Agents</div>
+            <div class="card-body">
+              Specialized, autonomous task-runners with a defined role, tool
+              access, and operating scope.
+            </div>
+          </div>
+          <div class="card" style="border-color: rgba(255, 209, 102, 0.4)">
+            <div class="card-icon">⚡</div>
+            <div class="card-title accent-yellow">Skills</div>
+            <div class="card-body">
+              Reusable, invocable procedures that encode a specific workflow
+              step or repeatable capability.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 4. HIERARCHY ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(255, 209, 102, 0.15); color: var(--accent4)"
+        >
+          Architecture
+        </div>
+        <div class="slide-title">The Hierarchy</div>
+        <div class="slide-subtitle">Each layer builds on the one above it.</div>
+        <div class="hierarchy">
+          <div
+            class="h-level"
+            style="
+              background: rgba(108, 99, 255, 0.15);
+              border: 1px solid rgba(108, 99, 255, 0.4);
+            "
+          >
+            <div class="h-label accent-purple">Layer 1 — Always Active</div>
+            <div class="h-name">📜 Rules / Instructions</div>
+            <div class="h-desc">
+              Project conventions, tone, safety constraints, coding standards
+            </div>
+          </div>
+          <div
+            style="
+              color: var(--muted);
+              text-align: center;
+              font-size: 22px;
+              line-height: 1;
+            "
+          >
+            ↓ consumed by
+          </div>
+          <div
+            class="h-level"
+            style="
+              background: rgba(0, 212, 170, 0.12);
+              border: 1px solid rgba(0, 212, 170, 0.35);
+            "
+          >
+            <div class="h-label accent-teal">Layer 2 — On Demand</div>
+            <div class="h-name">🤖 Agents</div>
+            <div class="h-desc">
+              Scoped task-runners that operate within the rules and use
+              available tools
+            </div>
+          </div>
+          <div
+            style="
+              color: var(--muted);
+              text-align: center;
+              font-size: 22px;
+              line-height: 1;
+            "
+          >
+            ↓ invoked by
+          </div>
+          <div
+            class="h-level"
+            style="
+              background: rgba(255, 209, 102, 0.12);
+              border: 1px solid rgba(255, 209, 102, 0.35);
+            "
+          >
+            <div class="h-label accent-yellow">Layer 3 — Reusable Steps</div>
+            <div class="h-name">⚡ Skills</div>
+            <div class="h-desc">
+              Atomic procedures that agents (or users directly) call to
+              accomplish sub-tasks
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 5. RULES — WHAT THEY ARE ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(108, 99, 255, 0.2); color: var(--accent)"
+        >
+          Layer 1
+        </div>
+        <div class="slide-title accent-purple">Rules &amp; Instructions</div>
+        <div class="slide-subtitle">
+          The always-on behavioral contract for AI in your project.
+        </div>
+        <div class="cards" style="max-width: 900px">
+          <div class="card">
+            <div class="card-icon">🗂️</div>
+            <div class="card-title">Where they live</div>
+            <div class="card-body">
+              <code>CLAUDE.md</code> (Claude Code),
+              <code>copilot-instructions.md</code> (GitHub Copilot) — the
+              instruction file your tool loads on start-up.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">⏱️</div>
+            <div class="card-title">Activation</div>
+            <div class="card-body">
+              Passively applied to every AI interaction without needing to be
+              invoked. They are always in scope.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">🌐</div>
+            <div class="card-title">Scope</div>
+            <div class="card-body">
+              Can be global (whole repo), layer-scoped (frontend / backend), or
+              file-type-scoped. Compose via <code>@include</code> or similar
+              directives.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 6. RULES — DO / DON'T ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(108, 99, 255, 0.2); color: var(--accent)"
+        >
+          Rules
+        </div>
+        <div class="slide-title">What to Include — and Avoid</div>
+        <div class="two-col" style="max-width: 900px">
+          <div class="do-box">
+            <div class="box-title">✅ Include</div>
+            <ul class="check-list">
+              <li data-icon="✅">
+                Coding conventions (naming, formatting, patterns)
+              </li>
+              <li data-icon="✅">
+                Response tone and greeting format requirements
+              </li>
+              <li data-icon="✅">
+                Security constraints (never commit secrets, avoid eval)
+              </li>
+              <li data-icon="✅">What the AI should NOT do by default</li>
+              <li data-icon="✅">Language/framework preferences</li>
+              <li data-icon="✅">
+                Prohibited patterns (e.g. no raw SQL in controllers)
+              </li>
+            </ul>
+          </div>
+          <div class="dont-box">
+            <div class="box-title">❌ Avoid</div>
+            <ul class="check-list">
+              <li data-icon="❌">Step-by-step workflow logic (→ Skills)</li>
+              <li data-icon="❌">Tool-specific API calls or CLI flags</li>
+              <li data-icon="❌">One-shot task descriptions (→ Agents)</li>
+              <li data-icon="❌">
+                Dynamic context or file lists (→ agent prompt)
+              </li>
+              <li data-icon="❌">
+                Information derivable from code/git history
+              </li>
+              <li data-icon="❌">Ephemeral state or in-progress task notes</li>
+              <li data-icon="❌">Duplicate info already in config files</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 7. RULES — EXAMPLE ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(108, 99, 255, 0.2); color: var(--accent)"
+        >
+          Rules · Example
+        </div>
+        <div class="slide-title">Anatomy of Good Rules</div>
+        <pre>
+<span class="cm"># General guidelines (CLAUDE.md / copilot-instructions.md)</span>
+
+<span class="cm">## Tone</span>
+<span class="kw">-</span> Begin every response with the 👋 emoji.
+<span class="kw">-</span> Keep answers concise; prefer code over prose.
+
+<span class="cm">## Code style</span>
+<span class="kw">-</span> Use camelCase for variables, PascalCase for types.
+<span class="kw">-</span> Never add speculative error handling for impossible cases.
+<span class="kw">-</span> Prefer editing existing files over creating new ones.
+
+<span class="cm">## Security</span>
+<span class="kw">-</span> Do not generate or commit secrets, tokens, or credentials.
+<span class="kw">-</span> Validate all user input at system boundaries.
+</pre>
+        <div class="tip">
+          <strong>Tip:</strong> Keep a single root file and
+          <em>compose</em> layer-specific overrides via includes — this prevents
+          duplication and makes the hierarchy explicit.
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 8. AGENTS — WHAT THEY ARE ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(0, 212, 170, 0.15); color: var(--accent2)"
+        >
+          Layer 2
+        </div>
+        <div class="slide-title accent-teal">Agents</div>
+        <div class="slide-subtitle">
+          Scoped AI workers with a single well-defined role.
+        </div>
+        <div class="cards" style="max-width: 900px">
+          <div class="card">
+            <div class="card-icon">🎯</div>
+            <div class="card-title">Purpose</div>
+            <div class="card-body">
+              Each agent encapsulates a role: "code reviewer", "test runner",
+              "migration planner". One agent, one job.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">🛠️</div>
+            <div class="card-title">Tools</div>
+            <div class="card-body">
+              Declare only the tools the agent needs. Minimal tool access
+              reduces surface area and keeps the agent focused.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">📦</div>
+            <div class="card-title">Isolation</div>
+            <div class="card-body">
+              Agents run in their own context but always operate within global
+              rules — rules have higher priority and cannot be overridden by an
+              agent.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 9. AGENTS — DO / DON'T ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(0, 212, 170, 0.15); color: var(--accent2)"
+        >
+          Agents
+        </div>
+        <div class="slide-title">What to Include — and Avoid</div>
+        <div class="two-col" style="max-width: 900px">
+          <div class="do-box">
+            <div class="box-title">✅ Include</div>
+            <ul class="check-list">
+              <li data-icon="✅">Clear, single-sentence role description</li>
+              <li data-icon="✅">Explicit list of allowed tools (whitelist)</li>
+              <li data-icon="✅">
+                Output format expectations (report, diff, JSON…)
+              </li>
+              <li data-icon="✅">
+                Scope boundaries (which files/dirs to touch)
+              </li>
+              <li data-icon="✅">
+                When to stop and ask vs. proceed autonomously
+              </li>
+              <li data-icon="✅">
+                When NOT to use this agent (usage guidance)
+              </li>
+              <li data-icon="✅">Model override if the task warrants it</li>
+            </ul>
+          </div>
+          <div class="dont-box">
+            <div class="box-title">❌ Avoid</div>
+            <ul class="check-list">
+              <li data-icon="❌">Mixing multiple unrelated responsibilities</li>
+              <li data-icon="❌">
+                Duplicating global rules already in instructions
+              </li>
+              <li data-icon="❌">Hardcoded file paths or branch names</li>
+              <li data-icon="❌">Granting tools the agent will never use</li>
+              <li data-icon="❌">
+                Procedural step-by-step instructions (→ Skills)
+              </li>
+              <li data-icon="❌">
+                Storing task-state or in-progress work inside the agent
+              </li>
+              <li data-icon="❌">
+                Tool-specific syntax (e.g. Claude-only flags)
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 10. AGENTS — EXAMPLE ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(0, 212, 170, 0.15); color: var(--accent2)"
+        >
+          Agents · Example
+        </div>
+        <div class="slide-title">Anatomy of a Well-Defined Agent</div>
+        <pre>
+<span class="cm">---</span>
+<span class="prop">name</span>: <span class="str">code-reviewer</span>
+<span class="prop">description</span>: <span class="str">Reviews pull-request diffs for correctness,</span>
+<span class="str">             security, and style. Use for PR review tasks.</span>
+<span class="prop">model</span>: <span class="str">sonnet</span>                     <span class="cm"># optional override</span>
+<span class="prop">tools</span>:
+  <span class="kw">-</span> <span class="str">Read</span>                         <span class="cm"># can read files</span>
+  <span class="kw">-</span> <span class="str">Grep</span>                         <span class="cm"># can search code</span>
+  <span class="kw">-</span> <span class="str">Bash</span>                         <span class="cm"># can run git diff</span>
+  <span class="cm"># no Write, no Edit — read-only role</span>
+<span class="cm">---</span>
+
+<span class="cm"># Role</span>
+You are a senior code reviewer. Your job is to identify bugs,
+security issues, and style violations in the provided diff.
+
+<span class="cm"># Output</span>
+Return a bullet-point report. Group findings by severity:
+Critical → Warning → Suggestion. Under 300 words.</pre>
+      </section>
+
+      <!-- ══════════════════════════════ 11. SKILLS — WHAT THEY ARE ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(255, 209, 102, 0.15); color: var(--accent4)"
+        >
+          Layer 3
+        </div>
+        <div class="slide-title accent-yellow">Skills</div>
+        <div class="slide-subtitle">
+          Reusable, invocable procedures — the verbs of your AI toolkit.
+        </div>
+        <div class="cards" style="max-width: 900px">
+          <div class="card">
+            <div class="card-icon">🔁</div>
+            <div class="card-title">Reusability</div>
+            <div class="card-body">
+              A skill encodes a workflow once. Any agent or user can invoke it
+              via <code>/skill-name</code> or an explicit reference.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">🔬</div>
+            <div class="card-title">Atomicity</div>
+            <div class="card-body">
+              Each skill does one thing well. Complex workflows chain skills;
+              skills themselves stay small and testable.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-icon">📖</div>
+            <div class="card-title">Self-describing</div>
+            <div class="card-body">
+              Skills must declare when to use them and when NOT to — so the AI
+              chooses the right tool for the job.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 12. SKILLS — DO / DON'T ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(255, 209, 102, 0.15); color: var(--accent4)"
+        >
+          Skills
+        </div>
+        <div class="slide-title">What to Include — and Avoid</div>
+        <div class="two-col" style="max-width: 900px">
+          <div class="do-box">
+            <div class="box-title">✅ Include</div>
+            <ul class="check-list">
+              <li data-icon="✅">
+                Trigger conditions ("use when…", "do NOT use when…")
+              </li>
+              <li data-icon="✅">Step-by-step procedure in plain language</li>
+              <li data-icon="✅">Expected inputs and outputs</li>
+              <li data-icon="✅">Tool calls with rationale for each</li>
+              <li data-icon="✅">Failure modes and how to handle them</li>
+              <li data-icon="✅">
+                Which agents or contexts this skill is valid in
+              </li>
+              <li data-icon="✅">Short examples of before/after state</li>
+            </ul>
+          </div>
+          <div class="dont-box">
+            <div class="box-title">❌ Avoid</div>
+            <ul class="check-list">
+              <li data-icon="❌">Global tone / style rules (→ Rules file)</li>
+              <li data-icon="❌">Role definitions (→ Agent)</li>
+              <li data-icon="❌">
+                Hardcoding environment-specific paths or URLs
+              </li>
+              <li data-icon="❌">
+                Side effects beyond the skill's declared scope
+              </li>
+              <li data-icon="❌">
+                Duplicating steps already handled by calling agents
+              </li>
+              <li data-icon="❌">Mixing unrelated actions into one skill</li>
+              <li data-icon="❌">State that persists beyond the invocation</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════ 13. SKILLS — EXAMPLE ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(255, 209, 102, 0.15); color: var(--accent4)"
+        >
+          Skills · Example
+        </div>
+        <div class="slide-title">Anatomy of a Good Skill</div>
+        <pre>
+<span class="cm">---</span>
+<span class="prop">name</span>: <span class="str">commit</span>
+<span class="prop">description</span>: <span class="str">Creates a conventional commit with a co-author footer.</span>
+<span class="str">             Use when the user says /commit or asks to create a commit.</span>
+<span class="str">             Do NOT use when no staged changes exist, or user just wants to stage files.</span>
+<span class="cm">---</span>
+
+<span class="cm"># Steps</span>
+<span class="kw">1.</span> Run `git status` — list staged and unstaged changes.
+<span class="kw">2.</span> Run `git diff --staged` — read the full diff.
+<span class="kw">3.</span> Run `git log -5` — match the repo's commit message style.
+<span class="kw">4.</span> Draft a message: &lt;type&gt;: &lt;summary&gt; (under 72 chars).
+<span class="kw">5.</span> Commit using a HEREDOC to preserve formatting.
+<span class="kw">6.</span> Append Co-Authored-By footer.
+<span class="kw">7.</span> Run `git status` to confirm success.
+
+<span class="cm"># Never</span>
+- Use --no-verify or skip hooks.
+- Amend existing commits unless user explicitly asks.</pre>
+      </section>
+
+      <!-- ══════════════════════════════ 14. COMPARISON TABLE ══════════════════════════════ -->
+      <section class="slide">
+        <div
+          class="tag"
+          style="background: rgba(108, 99, 255, 0.15); color: var(--accent)"
+        >
+          Summary
+        </div>
+        <div class="slide-title">Side-by-Side Comparison</div>
+        <table class="comp-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>📜 Rules</th>
+              <th>🤖 Agents</th>
+              <th>⚡ Skills</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Activation</strong></td>
+              <td>Always active</td>
+              <td>On demand / spawned</td>
+              <td>Invoked by name</td>
+            </tr>
+            <tr>
+              <td><strong>Primary use</strong></td>
+              <td>Constraints &amp; conventions</td>
+              <td>Role &amp; tool scope</td>
+              <td>Repeatable procedure</td>
+            </tr>
+            <tr>
+              <td><strong>Contains</strong></td>
+              <td>Do/Don't directives</td>
+              <td>Role + tool list + output format</td>
+              <td>Ordered steps + trigger conditions</td>
+            </tr>
+            <tr>
+              <td><strong>Scope</strong></td>
+              <td>Global / layer</td>
+              <td>Single task context</td>
+              <td>Single workflow</td>
+            </tr>
+            <tr>
+              <td><strong>Ownership</strong></td>
+              <td>Project wide</td>
+              <td>Individual / Project wide</td>
+              <td>Individual / Project wide</td>
+            </tr>
+            <tr>
+              <td><strong>Changes how often</strong></td>
+              <td>Rarely</td>
+              <td>When role changes</td>
+              <td>When workflow changes</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <!-- ── Navigation ── -->
+    <div id="nav">
+      <button class="nav-btn" id="prev-btn" disabled>← Prev</button>
+      <span id="slide-counter">1 / 17</span>
+      <button class="nav-btn" id="next-btn">Next →</button>
+    </div>
+
+    <script>
+      const slides = document.querySelectorAll(".slide");
+      const prevBtn = document.getElementById("prev-btn");
+      const nextBtn = document.getElementById("next-btn");
+      const counter = document.getElementById("slide-counter");
+      const bar = document.getElementById("progress-bar");
+      let current = 0;
+
+      function goTo(n) {
+        slides[current].classList.remove("active");
+        slides[current].classList.add("prev");
+        current = n;
+        // Remove 'prev' from all others after transition
+        setTimeout(() => {
+          document
+            .querySelectorAll(".slide.prev")
+            .forEach((s) => s.classList.remove("prev"));
+        }, 460);
+        slides[current].classList.add("active");
+        update();
+      }
+
+      function update() {
+        counter.textContent = `${current + 1} / ${slides.length}`;
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === slides.length - 1;
+        bar.style.width = `${((current + 1) / slides.length) * 100}%`;
+      }
+
+      prevBtn.addEventListener("click", () => current > 0 && goTo(current - 1));
+      nextBtn.addEventListener(
+        "click",
+        () => current < slides.length - 1 && goTo(current + 1),
+      );
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") nextBtn.click();
+        if (e.key === "ArrowLeft" || e.key === "ArrowUp") prevBtn.click();
+      });
+
+      update();
+    </script>
+  </body>
+</html>
